@@ -1,0 +1,3 @@
+1000000 Sangam Adhikari 1693-06-09 Male Nepal 9806933693 info@sangamadhikari.com 619
+1000001 Donald Dog 1969-06-09 Male USA 6933694200 donald@isgood.com 693
+1000002 Nolan Chris 1900-09-06 Male Interstellar 0000000000 tenet@memento.com 321
