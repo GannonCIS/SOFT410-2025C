@@ -5,30 +5,23 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class Login {
+    private File file = new File("db/credentials.txt");
+    private int accNo;
+    private String pass;
+
     void loginFun() throws IOException {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter your Account Number: ");
-        int accNo = scanner.nextInt();
+        this.accNo = scanner.nextInt();
         System.out.print("Enter your Password: ");
-        String pass = scanner.next();
+        this.pass = scanner.next();
         loginAuth(accNo, pass);
     }
 
      void loginAuth(int accNo, String pass) throws IOException {
-        File file = new File("db/credentials.txt");
         Scanner scanner = new Scanner(file);
-        boolean loginBoo = false;
-        boolean incPass = false;
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            String[] subLine = line.split(" ");
-            if (accNo == Integer.parseInt(subLine[0]) && pass.equals(subLine[1])) {
-                loginBoo = true;
-                break;
-            } else if (accNo == Integer.parseInt(subLine[0])) {
-                incPass = true;
-            }
-        }
+        boolean loginBoo = findLogin(scanner);
+        boolean incPass = findPassword(scanner);
         if (loginBoo) {
             System.out.println("Login Successful!!\n");
             Main.menu(accNo);
@@ -43,5 +36,31 @@ public class Login {
         }
     }
 
+    private boolean findLogin(Scanner scanner) throws IOException {
+        boolean loginBoo = false;
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+            String[] subLine = line.split(" ");
+            if (accNo == Integer.parseInt(subLine[0]) && pass.equals(subLine[1])) {
+                loginBoo = true;
+                break;
+            }
+        }
+        return loginBoo;
+    }
 
-}
+    private boolean findPassword(Scanner scanner) {
+        boolean incPass = false;
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+            String[] subLine = line.split(" ");
+            if (accNo == Integer.parseInt(subLine[0])) {
+                incPass = true;
+            }
+        }
+        return incPass;
+    }
+
+    }
+
+
