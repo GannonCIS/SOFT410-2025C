@@ -5,20 +5,21 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class Login {
-    private File file = new File("db/credentials.txt");
+
+    File file = new File("db/credentials.txt");
     private int accNo;
     private String pass;
+    Scanner scanner = new Scanner(System.in);
 
     void loginFun() throws IOException {
-        Scanner scanner = new Scanner(System.in);
         System.out.print("Enter your Account Number: ");
         this.accNo = scanner.nextInt();
         System.out.print("Enter your Password: ");
         this.pass = scanner.next();
-        loginAuth(accNo, pass);
+        loginAuth();
     }
 
-     void loginAuth(int accNo, String pass) throws IOException {
+     void loginAuth() throws IOException {
         Scanner scanner = new Scanner(file);
         boolean loginBoo = findLogin(scanner);
         boolean incPass = findPassword(scanner);
