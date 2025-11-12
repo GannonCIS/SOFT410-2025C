@@ -20,9 +20,9 @@ public class Login {
     }
 
      void loginAuth() throws IOException {
-        Scanner scanner = new Scanner(file);
-        boolean loginBoo = findLogin(scanner);
-        boolean incPass = findPassword(scanner);
+        Scanner scanFile = new Scanner(file);
+        boolean loginBoo = findLogin(scanFile);
+        boolean incPass = findPassword(scanFile);
         if (loginBoo) {
             System.out.println("Login Successful!!\n");
             Main.menu(accNo);
@@ -37,10 +37,10 @@ public class Login {
         }
     }
 
-    private boolean findLogin(Scanner scanner) throws IOException {
+    private boolean findLogin(Scanner scanFile) throws IOException {
         boolean loginBoo = false;
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
+        while (scanFile.hasNextLine()) {
+            String line = scanFile.nextLine();
             String[] subLine = line.split(" ");
             if (accNo == Integer.parseInt(subLine[0]) && pass.equals(subLine[1])) {
                 loginBoo = true;
@@ -50,10 +50,10 @@ public class Login {
         return loginBoo;
     }
 
-    private boolean findPassword(Scanner scanner) {
+    private boolean findPassword(Scanner scanFile) {
         boolean incPass = false;
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
+        while (scanFile.hasNextLine()) {
+            String line = scanFile.nextLine();
             String[] subLine = line.split(" ");
             if (accNo == Integer.parseInt(subLine[0])) {
                 incPass = true;
