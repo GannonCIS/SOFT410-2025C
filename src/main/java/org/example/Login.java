@@ -21,8 +21,10 @@ public class Login {
 
      void loginAuth() throws IOException {
         Scanner scanFile = new Scanner(file);
+        Scanner scanPass = new Scanner(file);
         boolean loginBoo = findLogin(scanFile);
-        boolean incPass = findPassword(scanFile);
+        boolean incPass = findPassword(scanPass);
+        scanFile.close();
         if (loginBoo) {
             System.out.println("Login Successful!!\n");
             Main.menu(accNo);
@@ -62,6 +64,16 @@ public class Login {
         return incPass;
     }
 
+    // Test-only method to allow setting the file path without modifying the original structure
+    public void setFile(File file) {
+        this.file = file;
     }
+
+    // Test-only method to allow setting input fields for direct authentication testing
+    public void setCredentials(int accNo, String pass) {
+        this.accNo = accNo;
+        this.pass = pass;
+    }
+}
 
 

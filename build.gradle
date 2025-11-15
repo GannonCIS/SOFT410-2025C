@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group = 'org.example'
@@ -13,8 +14,13 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'junit:junit:4.13.2'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.10.0'
 }
 
 test {
     useJUnitPlatform()
+}
+
+application {
+    mainClassName = 'org.example.Main'
 }
