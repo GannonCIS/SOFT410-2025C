@@ -24,10 +24,9 @@ public class Login {
         Scanner scanPass = new Scanner(file);
         boolean loginBoo = findLogin(scanFile);
         boolean incPass = findPassword(scanPass);
-        scanFile.close();
         if (loginBoo) {
             System.out.println("Login Successful!!\n");
-            Main.menu(accNo);
+//            Main.menu(accNo);
         } else if (incPass) {
             System.out.println("\nIncorrect Password!");
             System.out.println("Please enter again.\n");
