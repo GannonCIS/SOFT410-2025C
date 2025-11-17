@@ -3,6 +3,7 @@ pipeline {
     stages {
         stage('Build Jenkins') {
             steps {
+                sh 'chmod +x ./gradlew'
                 echo 'Building Jenkins'
                 sh './gradlew build'
             }
