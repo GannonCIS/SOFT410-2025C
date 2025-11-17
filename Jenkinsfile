@@ -11,7 +11,7 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Step 1: Starting Testing ...'
-                sh './gradlew test'
+                sh './gradlew test --rerun-tasks'
             }
             post {
                 always {
