@@ -5,8 +5,13 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class BalanceInquiry {
+
+    String getFilePath(String fileName) {
+        return fileName;
+    }
+
     void balanceInquiryFun(int accNo) throws IOException {
-        File file = new File("db/balanceDB.txt");
+        File file = new File(getFilePath("db/balanceDB.txt"));
         Scanner scanner = new Scanner(file);
         int accBalance = -1;
         while (scanner.hasNextLine()) {
@@ -19,7 +24,7 @@ public class BalanceInquiry {
         }
         if (accBalance == -1) {
             System.out.println("We're having some issues, Try Again!");
-            System.exit(0);
+            systemExit(0); // <--- Intercepted call
         } else {
             System.out.println("┌───────────────────────────────┐");
             System.out.println("  Your current balance is $"+ accBalance +"   ");
@@ -27,7 +32,15 @@ public class BalanceInquiry {
             System.out.println("Press Enter key to continue...");
             Scanner scanner1 = new Scanner(System.in);
             scanner1.nextLine();
-            Main.menu(accNo);
+            menuCall(accNo);
         }
+    }
+
+    void systemExit(int status) {
+        System.exit(status);
+    }
+
+    void menuCall(int accNo) throws IOException {
+        Main.menu(accNo);
     }
 }

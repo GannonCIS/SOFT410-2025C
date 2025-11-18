@@ -6,6 +6,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
 public class Transaction {
+
+    // --- NEW METHOD: Interceptor for file paths ---
+    // This allows the test to override the base path ("db/") with the temp folder path.
+    String getFilePath(String fileName) {
+        return fileName;
+    }
+
     void transactionFun(int accNo) throws IOException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Receiver's Account Number: ");
@@ -29,9 +36,16 @@ public class Transaction {
                 writeTransaction(accNo, rAccNo, tAmount, tRemarks); //write transaction to file
                 System.out.println("Transaction Successful!");
                 System.out.println("Press any key to continue...");
-                Scanner tscanner = new Scanner(System.in);
-                tscanner.nextLine();
-                Main.menu(accNo);
+
+                // --- FIX: Safely consume the required input token, if present ---
+                try (Scanner tscanner = new Scanner(System.in)) {
+                    if (tscanner.hasNextLine()) {
+                        tscanner.nextLine();
+                    }
+                }
+
+                // --- FIX 1: Call the interceptor method ---
+                menuCall(accNo);
             } else {
                 System.out.println("Insufficient Balance!");
             }
@@ -40,8 +54,14 @@ public class Transaction {
         }
     }
 
+    // --- NEW METHOD: Interceptor for Main.menu() ---
+    void menuCall(int accNo) throws IOException {
+        Main.menu(accNo);
+    }
+
     boolean rAccCheck(int rAccNo) throws FileNotFoundException {
-        File file = new File("db/balanceDB.txt");
+        // --- FIX 2: Use getFilePath ---
+        File file = new File(getFilePath("db/balanceDB.txt"));
         Scanner scanner = new Scanner(file);
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
@@ -53,7 +73,8 @@ public class Transaction {
     }
 
     boolean sAccBalCheck(int accNo, int tAmount) throws FileNotFoundException {
-        File file = new File("db/balanceDB.txt");
+        // --- FIX 3: Use getFilePath ---
+        File file = new File(getFilePath("db/balanceDB.txt"));
         Scanner scanner = new Scanner(file);
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
@@ -68,7 +89,8 @@ public class Transaction {
     }
 
     void transaction(int accNo, int rAccNo, int tAmount) throws IOException {
-        File file = new File("db/balanceDB.txt");
+        // --- FIX 4: Use getFilePath ---
+        File file = new File(getFilePath("db/balanceDB.txt"));
         Scanner scanner = new Scanner(file);
         String newInfo = "";
         while (scanner.hasNextLine()) {
@@ -84,7 +106,8 @@ public class Transaction {
             String newLine = a + " " + b;
             newInfo += newLine + "\n";
         }
-        Writer writer = new FileWriter("db/balanceDB.txt");
+        // --- FIX 5: Use getFilePath ---
+        Writer writer = new FileWriter(getFilePath("db/balanceDB.txt"));
         writer.write(newInfo);
         writer.close();
     }
@@ -101,7 +124,8 @@ public class Transaction {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
         String time = formatter.format(now);
-        Writer writer = new FileWriter("db/Bank Statement/acc_"+accNo+".txt", true);
+        // --- FIX 6: Use getFilePath ---
+        Writer writer = new FileWriter(getFilePath("db/Bank Statement/acc_"+accNo+".txt"), true);
         writer.write(description + " " + type + " " + tAmount + " " + tRemarks + " " + date + " " + time + "\n");
         writer.close();
     }
@@ -113,10 +137,9 @@ public class Transaction {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
         String time = formatter.format(now);
-        Writer writer = new FileWriter("db/Bank Statement/acc_"+rAccNo+".txt",true);
+        // --- FIX 7: Use getFilePath ---
+        Writer writer = new FileWriter(getFilePath("db/Bank Statement/acc_"+rAccNo+".txt"),true);
         writer.write(description + " " + type + " " + tAmount + " " + tRemarks + " " + date + " " + time + "\n");
         writer.close();
     }
-
-
 }

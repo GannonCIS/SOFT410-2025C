@@ -17,23 +17,36 @@ public class Creation {
         System.out.println("\nAccount created successfully!\n");
         System.out.println("Your account number is: " + accNo);
         System.out.println("Your password is: " + accLineInfo[8]+ "\n");
+
+        menuCall(accNo);
+    }
+
+    // Interceptor for Main.menu(), necessary for tests
+    void menuCall(int accNo) throws IOException {
         Main.menu(accNo);
     }
 
     String[] getUserInfoFromUser() throws IOException {
         String[] accLineInfo = new String[9];
         Scanner scanner = new Scanner(System.in);
+        String fullName = "";
+        String[] fullNameArr;
 
-        System.out.println("Enter your Name: ");
-        String fullName = scanner.nextLine();
-        String[] fullNameArr = fullName.split(" ");
-        if (fullNameArr.length == 2) {
-            accLineInfo[0] = fullNameArr[0];
-            accLineInfo[1] = fullNameArr[1];
-        } else {
-            System.out.println("Please provide both first name and last name.");
-            return getUserInfoFromUser();
+        // Had to use a loop instead of recursion to handle input failure cleanly
+        while (true) {
+            System.out.println("Enter your Name: ");
+            fullName = scanner.nextLine();
+            fullNameArr = fullName.split(" ");
+
+            if (fullNameArr.length == 2) {
+                accLineInfo[0] = fullNameArr[0]; // First Name
+                accLineInfo[1] = fullNameArr[1]; // Last Name
+                break; // Exit loop on valid input
+            } else {
+                System.out.println("Please provide both first name and last name.");
+            }
         }
+
         accLineInfo[0] = fullNameArr[0];
         accLineInfo[1] = fullNameArr[1];
 
@@ -52,7 +65,7 @@ public class Creation {
         System.out.println("Create a Password for your Account: ");
         accLineInfo[8] = scanner.nextLine();
         return accLineInfo;
-        }
+    }
 
     int accNoCreation() throws IOException {
         String lastLine = "";
@@ -93,7 +106,4 @@ public class Creation {
         }
         writer.close();
     }
-
-
 }
-

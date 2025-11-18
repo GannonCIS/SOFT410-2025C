@@ -1,6 +1,5 @@
 package org.example;
 
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,6 +42,7 @@ public class loginAuthTest {
         outputStream = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outputStream));
 
+        // Create the mock file in the temporary folder
         File dbDir = tempFolder.newFolder("db");
         mockCredentialsFile = new File(dbDir, "credentials.txt");
 
@@ -51,9 +51,9 @@ public class loginAuthTest {
             writer.write("67890 otherpass\n");
         }
 
+        // Initialize the Spy and set its file path
         loginSpy = new LoginSpy();
-        loginSpy.setFile(mockCredentialsFile);
-        loginSpy.resetSpy();
+        loginSpy.file = mockCredentialsFile; // Manually set the file path
     }
 
     @After
@@ -62,50 +62,73 @@ public class loginAuthTest {
         System.setOut(originalOut);
     }
 
+    /**
+     * Spy class to intercept recursive calls (loginFun)
+     * and application flow calls (menuCall).
+     */
     private static class LoginSpy extends Login {
 
-        boolean loginFunCalled = false;
+        public int menuCallAccNo = -1;
+        public boolean loginFunCalled = false;
 
-        @Override
-        void loginFun() throws IOException {
-                loginFunCalled = true;
+        // This method is called by the test to set private fields
+        public void setCredentials(int accNo, String pass) {
+            // We can't access private fields, so we assume Login.java
+            // makes accNo and pass protected or has setters.
+            // Since it doesn't, we must modify the spy to use the protected fields.
+            // Wait, the fields accNo and pass *are* accessible in the spy.
+            super.accNo = accNo;
+            super.pass = pass;
         }
 
-        public void resetSpy() {
+        // Intercepts the recursive call on failure
+        @Override
+        void loginFun() throws IOException {
+            loginFunCalled = true;
+        }
 
-            loginFunCalled = false;
-
+        // Intercepts the Main.menu() call on success
+        @Override
+        void menuCall(int accNo) throws IOException {
+            this.menuCallAccNo = accNo;
         }
     }
 
     @Test
-    public void testSuccessfulLogin_LoginFun() throws IOException {
+    public void testSuccessfulLogin() throws IOException {
+        // Arrange: Set the credentials the loginAuth() method will use
         loginSpy.setCredentials(Integer.parseInt(VALID_ACC_NO), VALID_PASS);
 
+        // Act
         loginSpy.loginAuth();
 
+        // Assert
         String actualOutput = outputStream.toString();
-
         Assert.assertTrue("Output should contain 'Login Successful!!'",
                 actualOutput.contains("Login Successful!!\n"));
 
+        // Assert that the menu interceptor was called, not the real Main.menu()
+        Assert.assertEquals("Menu call interceptor should be called with the correct account number.",
+                Integer.parseInt(VALID_ACC_NO), loginSpy.menuCallAccNo);
     }
 
     @Test
-    public void testIncorrectPassword_LoginFun() throws IOException {
+    public void testIncorrectPassword() throws IOException {
         loginSpy.setCredentials(Integer.parseInt(VALID_ACC_NO), INCORRECT_PASS);
 
         loginSpy.loginAuth();
 
         String actualOutput = outputStream.toString();
-
         Assert.assertTrue("Output should contain 'Incorrect Password!'",
                 actualOutput.contains("\nIncorrect Password!"));
 
+        // Assert that the recursive loginFun() interceptor was called
+        Assert.assertTrue("loginFun() interceptor should have been called on failure.",
+                loginSpy.loginFunCalled);
     }
 
     @Test
-    public void testAccountDoesNotExist_LoginAuth() throws IOException {
+    public void testAccountDoesNotExist() throws IOException {
         String NON_EXISTENT_ACC_NO = "99999";
         String ANY_PASS = "test";
 
@@ -114,9 +137,11 @@ public class loginAuthTest {
         loginSpy.loginAuth();
 
         String actualOutput = outputStream.toString();
-
-        Assert.assertTrue("'Account doesn't exists!'",
+        Assert.assertTrue("Output should contain 'Account doesn't exists!'",
                 actualOutput.contains("\nAccount doesn't exists!"));
 
+        // Assert that the recursive loginFun() interceptor was called
+        Assert.assertTrue("loginFun() interceptor should have been called on failure.",
+                loginSpy.loginFunCalled);
     }
 }

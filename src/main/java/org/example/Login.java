@@ -7,8 +7,9 @@ import java.util.Scanner;
 public class Login {
 
     File file = new File("db/credentials.txt");
-    private int accNo;
-    private String pass;
+    // --- FIX: Change visibility from private to protected ---
+    protected int accNo;
+    protected String pass;
     Scanner scanner = new Scanner(System.in);
 
     void loginFun() throws IOException {
@@ -19,60 +20,59 @@ public class Login {
         loginAuth();
     }
 
-     void loginAuth() throws IOException {
-        Scanner scanFile = new Scanner(file);
-        Scanner scanPass = new Scanner(file);
-        boolean loginBoo = findLogin(scanFile);
-        boolean incPass = findPassword(scanPass);
+    void loginAuth() throws IOException {
+        // --- FIX 1: Each find method needs its own scanner ---
+        boolean loginBoo = findLogin(new Scanner(file));
+        boolean incPass = findPassword(new Scanner(file));
+
         if (loginBoo) {
             System.out.println("Login Successful!!\n");
-//            Main.menu(accNo);
+            // --- FIX 2: Call the interceptor method ---
+            menuCall(accNo);
         } else if (incPass) {
             System.out.println("\nIncorrect Password!");
             System.out.println("Please enter again.\n");
-            loginFun();
+            loginFun(); // Recursive call
         } else {
             System.out.println("\nAccount doesn't exists!");
             System.out.println("Please enter again.\n");
-            loginFun();
+            loginFun(); // Recursive call
         }
     }
 
-    private boolean findLogin(Scanner scanFile) throws IOException {
+    // --- NEW METHOD: Interceptor for Main.menu() ---
+    void menuCall(int accNo) throws IOException {
+        Main.menu(accNo);
+    }
+
+    private boolean findLogin(Scanner scanner) throws IOException {
         boolean loginBoo = false;
-        while (scanFile.hasNextLine()) {
-            String line = scanFile.nextLine();
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+            if (line.trim().isEmpty()) continue;
             String[] subLine = line.split(" ");
             if (accNo == Integer.parseInt(subLine[0]) && pass.equals(subLine[1])) {
                 loginBoo = true;
                 break;
             }
         }
+        scanner.close(); // Close the scanner
         return loginBoo;
     }
 
-    private boolean findPassword(Scanner scanFile) {
+    private boolean findPassword(Scanner scanner) {
         boolean incPass = false;
-        while (scanFile.hasNextLine()) {
-            String line = scanFile.nextLine();
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+            if (line.trim().isEmpty()) continue;
             String[] subLine = line.split(" ");
             if (accNo == Integer.parseInt(subLine[0])) {
                 incPass = true;
+                break; // Found the account, no need to keep scanning
             }
         }
+        scanner.close(); // Close the scanner
         return incPass;
     }
 
-    // Test-only method to allow setting the file path without modifying the original structure
-    public void setFile(File file) {
-        this.file = file;
-    }
-
-    // Test-only method to allow setting input fields for direct authentication testing
-    public void setCredentials(int accNo, String pass) {
-        this.accNo = accNo;
-        this.pass = pass;
-    }
 }
-
-

@@ -10,9 +10,26 @@ repositories {
     mavenCentral()
 }
 
+java {
+    toolchain {
+        // You can change 17 to 8, 11, or 21 depending on your project's target version
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
 dependencies {
+    // Use the JUnit 5 BOM to manage all JUnit dependencies
     testImplementation platform('org.junit:junit-bom:5.10.0')
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // Core JUnit 5 dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+    // JUnit 4 support (Vintage Engine)
     testImplementation 'junit:junit:4.13.2'
     testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.10.0'
 }
@@ -22,5 +39,5 @@ test {
 }
 
 application {
-    mainClassName = 'org.example.Main'
+    mainClass = 'org.example.Main'
 }
