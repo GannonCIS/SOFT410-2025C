@@ -9,18 +9,16 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Scanner;
 
 
 @RunWith(JUnit4.class)
-public class loginAuthTest {
+public class LoginAuthTest {
 
     @Rule
     public final TemporaryFolder tempFolder = new TemporaryFolder();
