@@ -59,8 +59,10 @@ public class AccountDetailsTest {
         userPath = Path.of(dbDir.getAbsolutePath(), USER_FILE_NAME);
 
         // Initialize the userDB.txt with test data
+        // NOTE: The split logic relies on spaces. We replace spaces in FULL_NAME for consistency.
+        String fullDataLine = TEST_ACC_NO + " " + FULL_NAME.replace(" ", " ") + " " + DOB + " " + GENDER + " " + ADDRESS + " " + PHONE + " " + EMAIL + " " + ID;
         String userData = "10000 John Doe 1990-01-01 Male 1st_St 555-1234 user@mail.com ID1" + NL
-                + TEST_ACC_NO + " " + FULL_NAME.replace(" ", " ") + " " + DOB + " " + GENDER + " " + ADDRESS + " " + PHONE + " " + EMAIL + " " + ID + NL
+                + fullDataLine + NL
                 + "50000 Bob Jones 2000-10-10 Male 3rd_Rd 555-9012 bob@mail.com ID3";
         Files.writeString(userPath, userData);
 
@@ -85,13 +87,21 @@ public class AccountDetailsTest {
         private final String dbPath;
         public int menuCallAccNo = -1;
 
+        // FIX 1: The AccountDetails constructor no longer uses tempPath directly,
+        // it uses the injected UserRepository which itself needs a PathResolver.
         public AccountDetailsSpy(String tempPath) {
+            // Instantiate with the default constructor, letting it use 'this' as the PathResolver
+            super();
             this.dbPath = tempPath;
+
+            // To properly inject the UserRepository with the correct PathResolver:
+            // The default super() constructor calls new UserRepository(this),
+            // so we only need to ensure 'this' (the spy) resolves the path correctly.
         }
 
         // Intercepts the hardcoded file path generation
         @Override
-        String getFilePath(String fileName) {
+        public String getFilePath(String fileName) {
             // Replaces "db/..." with the temporary folder path
             return fileName.replace("db/", dbPath + File.separator);
         }
@@ -113,28 +123,54 @@ public class AccountDetailsTest {
         // Assert 1: Verify console output contains all details
         String output = outputStream.toString();
 
-        Assert.assertTrue("Output should contain the account details title.", output.contains("Account Details:"));
-        Assert.assertTrue("Full name is incorrect.", output.contains("Full Name: " + FULL_NAME));
-        Assert.assertTrue("Account number is incorrect.", output.contains("Account Number: " + TEST_ACC_NO));
-        Assert.assertTrue("Gender is incorrect.", output.contains("Gender: " + GENDER));
-        Assert.assertTrue("Address is incorrect.", output.contains("Address: " + ADDRESS));
-        Assert.assertTrue("Phone number is incorrect.", output.contains("Phone number: " + PHONE));
-        Assert.assertTrue("Identification is incorrect.", output.contains("Identification: " + ID));
+        // FIX: Assertions updated to match the new simple println format ("  Field Name: Value")
+        Assert.assertTrue("Output should contain the account details title.", output.contains("Account Details"));
+
+        // Output: "  Full Name: Alice Smith"
+        Assert.assertTrue("Full name is incorrect.", output.contains("  Full Name: " + FULL_NAME));
+
+        // Output: "  Account Number: 40000"
+        Assert.assertTrue("Account number is incorrect.", output.contains("  Account Number: " + TEST_ACC_NO));
+
+        // Output: "  Gender: Female"
+        Assert.assertTrue("Gender is incorrect.", output.contains("  Gender: " + GENDER));
+
+        // Output: "  Address: 123_Test_Lane"
+        Assert.assertTrue("Address is incorrect.", output.contains("  Address: " + ADDRESS));
+
+        // Output: "  Date of Birth: 1995-05-05"
+        Assert.assertTrue("Date of Birth is incorrect.", output.contains("  Date of Birth: " + DOB));
+
+        // Output: "  Phone number: 5551234567"
+        Assert.assertTrue("Phone number is incorrect.", output.contains("  Phone number: " + PHONE));
+
+        // Output: "  Email: alice@example.com"
+        Assert.assertTrue("Email is incorrect.", output.contains("  Email: " + EMAIL));
+
+        // Output: "  Identification: ID98765" (Based on current AccountDetails.java logic)
+        Assert.assertTrue("Identification is incorrect.", output.contains("  Identification: " + ID));
 
         // Assert 2: Verify application proceeds to the main menu
         Assert.assertEquals("Menu call interceptor should be called with the correct account number.",
                 TEST_ACC_NO, accountDetailsSpy.menuCallAccNo);
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
-    public void testAccountDetailsFun_DetailsNotFound_ThrowsException() throws IOException {
+    // --- REWRITTEN TEST CASE ---
+    @Test
+    public void testAccountDetailsFun_DetailsNotFound_ReportsError() throws IOException {
         // Arrange: Use a non-existent account number (NON_EXISTENT_ACC)
+        final int EXPECTED_ACC_NO = NON_EXISTENT_ACC;
 
         // Act
-        // We expect the function to crash on detail[1] because wholeDetail is "" and detail is [""]
-        accountDetailsSpy.accountDetailsFun(NON_EXISTENT_ACC);
+        accountDetailsSpy.accountDetailsFun(EXPECTED_ACC_NO);
 
-        // Note: The assertion Assert.fail is not needed here because @Test(expected = ...) handles the check.
-        // If the code reaches the end of the method without crashing, the test will fail due to the expected exception not being thrown.
+        // Assert 1: Verify the error message was displayed
+        String output = outputStream.toString();
+        Assert.assertTrue("Output must contain the 'not found' error message.",
+                output.contains("Error: Account details not found."));
+
+        // Assert 2: Verify flow control returns to the menu
+        Assert.assertEquals("Menu call interceptor should be called with the non-existent account number.",
+                EXPECTED_ACC_NO, accountDetailsSpy.menuCallAccNo);
     }
 }

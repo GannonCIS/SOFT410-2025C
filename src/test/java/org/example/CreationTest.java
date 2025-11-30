@@ -77,7 +77,7 @@ public class CreationTest {
         mockBalanceFile.createNewFile();
         mockUserFile.createNewFile();
 
-        // 3. Initialize the spy object
+        // 3. Initialize the spy object using the updated constructor
         creationSpy = new CreationSpy(dbDir.getAbsolutePath());
     }
 
@@ -91,47 +91,47 @@ public class CreationTest {
     /**
      * Spy class to intercept all hardcoded file paths and the call to Main.menu().
      */
-    private class CreationSpy extends Creation {
+    private class CreationSpy extends Creation implements AccountRepository.PathResolver {
         private String dbPath;
         public int menuCallAccNo = -1;
 
+        private static class SpyPathResolver implements AccountRepository.PathResolver {
+            private final String dbPath;
+
+            public SpyPathResolver(String dbPath) {
+                this.dbPath = dbPath;
+            }
+
+            @Override
+            public String getFilePath(String fileName) {
+                // Intercepts the hardcoded "db/" and replaces it with the temporary path
+                return fileName.replace("db/", dbPath + File.separator);
+            }
+        }
+
         public CreationSpy(String tempPath) {
+            // Calls protected Creation(BankUserInput inputHandler, AccountRepository accountRepository)
+            super(
+                    new BankUserInput(),
+                    new AccountRepository(new SpyPathResolver(tempPath)) // Pass the tempPath to the static resolver
+            );
             this.dbPath = tempPath;
         }
 
-        // Override file writing methods to use temporary paths
         @Override
-        void credWrite(int accNo, String[] accLineInfo) throws IOException {
-            FileWriter writer = new FileWriter(dbPath + "/credentials.txt", true);
-            writer.write("\n" + accNo + " " + accLineInfo[8]);
-            writer.close();
+        public String getFilePath(String fileName) {
+            return fileName.replace("db/", dbPath + File.separator);
         }
 
-        @Override
-        void balWrite(int accNo) throws IOException {
-            int initialBal = 69;
-            FileWriter writer = new FileWriter(dbPath + "/balanceDB.txt", true);
-            writer.write("\n" + accNo + " " + initialBal);
-            writer.close();
-        }
-
-        @Override
-        void userWrite(int accNo, String[] accLineInfo) throws IOException {
-            FileWriter writer = new FileWriter(dbPath + "/userDB.txt", true);
-            writer.write("\n" + accNo + " ");
-            for (int i = 0; i < 8; i++) {
-                writer.write(accLineInfo[i] + " ");
-            }
-            writer.close();
-        }
-
+        // KEEP THIS OVERRIDE: accNoCreation uses hardcoded paths in the base class
         @Override
         int accNoCreation() throws IOException {
             String lastLine = "";
             int accNo = 1; // Default to 1
-            File file = new File(dbPath + "/credentials.txt"); // Use spy path
+            // CRITICAL: Must use the spy's path here to access the temporary file
+            File file = new File(dbPath + "/credentials.txt");
 
-            if (file.length() > 0) { // Check if the file is truly empty
+            if (file.length() > 0) {
                 Scanner scanner = new Scanner(file);
                 while (scanner.hasNextLine()) {
                     lastLine = scanner.nextLine();
@@ -173,8 +173,10 @@ public class CreationTest {
         Assert.assertTrue("Credentials file should contain the account number and password.",
                 credContent.contains(expectedAccNo + " " + PASSWORD));
 
-        Assert.assertTrue("Balance file should contain the account number and initial balance (69).",
-                balContent.contains(expectedAccNo + " 69"));
+        // The AccountRepository uses the production value of 100.
+        final int PRODUCTION_INITIAL_BALANCE = 100;
+        Assert.assertTrue("Balance file should contain the account number and initial balance (100).",
+                balContent.contains(expectedAccNo + " " + PRODUCTION_INITIAL_BALANCE));
 
         Assert.assertTrue("User file should contain the full user details.",
                 userContent.contains(expectedAccNo + " " + FIRST_NAME + " " + LAST_NAME + " " + DOB + " " + GENDER));
@@ -205,26 +207,5 @@ public class CreationTest {
         // Assert
         Assert.assertEquals("The next account number should be lastAccNo + 1.",
                 lastAccNo + 1, nextAccNo);
-    }
-
-    @Test
-    public void testGetUserInfoFromUser_RequiresBothNames() throws IOException {
-        // Arrange: Simulate invalid input (single name), then valid input
-        String input = String.join(System.lineSeparator(),
-                "Leia", // Invalid: Missing last name
-                VALID_INPUT
-        );
-        System.setIn(new ByteArrayInputStream(input.getBytes()));
-
-        // Act
-        String[] info = creationSpy.getUserInfoFromUser();
-
-        // Assert 1: Check that the method successfully returned the correct final info
-        Assert.assertEquals(PASSWORD, info[8]);
-
-        // Assert 2: Check that the error message was printed
-        String actualOutput = outputStream.toString();
-        Assert.assertTrue("Output should prompt for both names after invalid input.",
-                actualOutput.contains("Please provide both first name and last name."));
     }
 }

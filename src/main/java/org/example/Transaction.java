@@ -5,46 +5,77 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
-public class Transaction {
+public class Transaction implements TransactionDataRepository.PathResolver{
 
-    // --- NEW METHOD: Interceptor for file paths ---
-    // This allows the test to override the base path ("db/") with the temp folder path.
-    String getFilePath(String fileName) {
+    private final BalanceData balanceData;
+    private final BankUserInput inputHandler;
+    private final TransactionDataRepository recordRepository;
+    private final TransactionValidator validator;
+
+    public Transaction() {
+        String dbPath = getFilePath("db" + File.separator);
+        this.balanceData = new BalanceData(dbPath);
+        this.inputHandler = new BankUserInput();
+        this.recordRepository = new TransactionDataRepository(this);
+        this.validator = new TransactionValidator(this.balanceData);
+    }
+
+    // Constructor for testing
+    protected Transaction(BalanceData balanceData) {
+        this.balanceData = balanceData;
+        this.inputHandler = new BankUserInput();
+        this.recordRepository = new TransactionDataRepository(this);
+        this.validator = new TransactionValidator(this.balanceData);
+    }
+
+    protected Transaction(BalanceData balanceData, BankUserInput inputHandler, TransactionDataRepository recordRepository, TransactionValidator validator) {
+        this.balanceData = balanceData;
+        this.inputHandler = inputHandler;
+        this.recordRepository = recordRepository;
+        this.validator = validator;
+    }
+
+    // Updated Fallback protected constructor for testing purposes
+    protected Transaction(BalanceData balanceData, BankUserInput inputHandler, TransactionDataRepository recordRepository) {
+        this.balanceData = balanceData;
+        this.inputHandler = inputHandler;
+        this.recordRepository = recordRepository;
+        this.validator = new TransactionValidator(this.balanceData);
+    }
+
+    // Fallback protected constructor for testing purposes (original signature)
+    protected Transaction(BalanceData balanceData, BankUserInput inputHandler) {
+        this(balanceData, inputHandler, new TransactionDataRepository(new Transaction()));
+    }
+
+    @Override
+    public String getFilePath(String fileName) {
         return fileName;
     }
 
     void transactionFun(int accNo) throws IOException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Receiver's Account Number: ");
-        int rAccNo = scanner.nextInt();
-        scanner.nextLine();
-        System.out.println("Amount: ");
-        int tAmount = scanner.nextInt();
-        scanner.nextLine();
-        System.out.println("Remarks: ");
-        String tRemarks = scanner.nextLine();
-        System.out.println("\n");
-        allTransaction(accNo, rAccNo, tAmount, tRemarks);
+        TransactionDetails details = inputHandler.getTransferDetails(accNo);
+        allTransaction(details);
     }
 
-    void allTransaction(int accNo, int rAccNo, int tAmount, String tRemarks) throws IOException {
-        if (rAccCheck(rAccNo)) {
-            //rAcc Validated
-            if (sAccBalCheck(accNo, tAmount)) {
-                //sBalance ok
+    void allTransaction(TransactionDetails details) throws IOException {
+        int accNo = details.getSenderAccNo();
+        int rAccNo = details.getReceiverAccNo();
+        int tAmount = details.getAmount();
+        String tRemarks = details.getRemarks();
+
+        if (validator.isReceiverAccountValid(rAccNo)) {
+            if (validator.isSufficientBalance(accNo, tAmount)) {
                 transaction(accNo, rAccNo, tAmount);  //actual transaction
-                writeTransaction(accNo, rAccNo, tAmount, tRemarks); //write transaction to file
+                writeTransaction(details); //write transaction to file
                 System.out.println("Transaction Successful!");
                 System.out.println("Press any key to continue...");
 
-                // --- FIX: Safely consume the required input token, if present ---
                 try (Scanner tscanner = new Scanner(System.in)) {
                     if (tscanner.hasNextLine()) {
                         tscanner.nextLine();
                     }
                 }
-
-                // --- FIX 1: Call the interceptor method ---
                 menuCall(accNo);
             } else {
                 System.out.println("Insufficient Balance!");
@@ -54,92 +85,17 @@ public class Transaction {
         }
     }
 
-    // --- NEW METHOD: Interceptor for Main.menu() ---
+    void transaction(int accNo, int rAccNo, int tAmount) throws IOException {
+        balanceData.updateBalances(accNo, rAccNo, tAmount);
+    }
+
+    void writeTransaction(TransactionDetails details) throws IOException {
+        recordRepository.recordDebit(details);
+        recordRepository.recordCredit(details);
+    }
+
+    //Needed for testing
     void menuCall(int accNo) throws IOException {
         Main.menu(accNo);
-    }
-
-    boolean rAccCheck(int rAccNo) throws FileNotFoundException {
-        // --- FIX 2: Use getFilePath ---
-        File file = new File(getFilePath("db/balanceDB.txt"));
-        Scanner scanner = new Scanner(file);
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            String[] subLine = line.split(" ");
-            int a = Integer.parseInt(subLine[0]);
-            if (rAccNo == a) return true;
-        }
-        return false;
-    }
-
-    boolean sAccBalCheck(int accNo, int tAmount) throws FileNotFoundException {
-        // --- FIX 3: Use getFilePath ---
-        File file = new File(getFilePath("db/balanceDB.txt"));
-        Scanner scanner = new Scanner(file);
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            String[] subLine = line.split(" ");
-            int a = Integer.parseInt(subLine[0]);
-            int b = Integer.parseInt(subLine[1]);
-            if (accNo == a) {
-                if (tAmount <= b) return true;
-            }
-        }
-        return false;
-    }
-
-    void transaction(int accNo, int rAccNo, int tAmount) throws IOException {
-        // --- FIX 4: Use getFilePath ---
-        File file = new File(getFilePath("db/balanceDB.txt"));
-        Scanner scanner = new Scanner(file);
-        String newInfo = "";
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            String[] subLine = line.split(" ");
-            int a = Integer.parseInt(subLine[0]);
-            int b = Integer.parseInt(subLine[1]);
-            if (accNo == a) {
-                b = b - tAmount;
-            } else if (rAccNo == a) {
-                b = b + tAmount;
-            }
-            String newLine = a + " " + b;
-            newInfo += newLine + "\n";
-        }
-        // --- FIX 5: Use getFilePath ---
-        Writer writer = new FileWriter(getFilePath("db/balanceDB.txt"));
-        writer.write(newInfo);
-        writer.close();
-    }
-
-    void writeTransaction(int accNo, int rAccNo, int tAmount, String tRemarks) throws IOException {
-        debitWrite(accNo, rAccNo, tAmount, tRemarks);
-        creditWrite(accNo, rAccNo, tAmount, tRemarks);
-    }
-
-    void debitWrite(int accNo, int rAccNo, int tAmount, String tRemarks) throws IOException {
-        String description = ("Transfer to " + rAccNo);
-        String type = "Debit";
-        String date = java.time.LocalDate.now().toString();
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-        String time = formatter.format(now);
-        // --- FIX 6: Use getFilePath ---
-        Writer writer = new FileWriter(getFilePath("db/Bank Statement/acc_"+accNo+".txt"), true);
-        writer.write(description + " " + type + " " + tAmount + " " + tRemarks + " " + date + " " + time + "\n");
-        writer.close();
-    }
-
-    void creditWrite(int accNo, int rAccNo, int tAmount, String tRemarks) throws IOException {
-        String description = ("Transfer from " + accNo);
-        String type = "Credit";
-        String date = java.time.LocalDate.now().toString();
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-        String time = formatter.format(now);
-        // --- FIX 7: Use getFilePath ---
-        Writer writer = new FileWriter(getFilePath("db/Bank Statement/acc_"+rAccNo+".txt"),true);
-        writer.write(description + " " + type + " " + tAmount + " " + tRemarks + " " + date + " " + time + "\n");
-        writer.close();
     }
 }

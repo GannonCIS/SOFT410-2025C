@@ -87,13 +87,15 @@ public class TransactionTest {
         public int menuCallAccNo = -1;
 
         public TransactionSpy(String tempPath) {
+            super(new BalanceData(tempPath + File.separator));
             this.dbPath = tempPath;
         }
 
-        // Intercepts the hardcoded file path generation
+        // --- FIX 4 (Error 2): Change visibility from package-private to PUBLIC ---
+        // Clashes with the base class method which must be public due to the PathResolver interface.
         @Override
-        String getFilePath(String fileName) {
-            // Replaces "db/" at the start of the path with the temporary folder path
+        public String getFilePath(String fileName) {
+            // Intercepts the hardcoded file path generation
             return fileName.replace("db/", dbPath + File.separator);
         }
 

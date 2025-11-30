@@ -13,7 +13,6 @@ public class Deletion {
         System.out.println("Type 2: No");
         Scanner tscanner = new Scanner(System.in);
 
-        // --- FIX 1: Use a loop and read full lines for robust input ---
         while (true) {
             int conf = -1;
             try {
@@ -51,41 +50,48 @@ public class Deletion {
     }
 
     void delLine(int accNo, String fileName) throws IOException {
-
         File file = new File(fileName);
-        String newInfo = "";
-        Scanner scanner = new Scanner(file);
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            // Prevent empty lines from being processed
-            if (line.trim().isEmpty()) {
-                continue;
-            }
-            String[] subLine = line.split(" ");
-            int countLine = subLine.length;
-            if (accNo == Integer.parseInt(subLine[0])) {
-                continue;
-            }
-            String newLine = "";
-            for (int x=0;x < countLine; x++){
-                newLine += subLine[x] + " ";
-            }
-
-            // --- FIX 2: Use System.lineSeparator() for consistent newlines ---
-            newInfo += newLine.trim() + System.lineSeparator();
-        }
-
-        // Check if the last line is blank
-        if (newInfo.endsWith(System.lineSeparator())) {
-            // Remove the trailing newline
-            newInfo = newInfo.substring(0, newInfo.length() - System.lineSeparator().length());
-        }
-
-        FileWriter writer = new FileWriter(fileName);
-        writer.write(newInfo);
-        writer.close();
-        scanner.close();
-
+        String newInfo = readContent(accNo, file);
+        writeContent(fileName, newInfo);
     }
 
+    private String readContent(int accNo, File file) throws IOException {
+        StringBuilder newInfo = new StringBuilder();
+        try (Scanner scanner = new Scanner(file)) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String processedLine = processLine(line, accNo);
+                if (processedLine != null) {
+                    newInfo.append(processedLine).append(System.lineSeparator());
+                }
+            }
+        }
+        if (newInfo.length() > 0 && newInfo.toString().endsWith(System.lineSeparator())) {
+            newInfo.setLength(newInfo.length() - System.lineSeparator().length());
+        }
+        return newInfo.toString();
+    }
+
+    private String processLine(String line, int accNo) {
+        if (line.trim().isEmpty()) {
+            return null;
+        }
+        String[] subLine = line.split(" ");
+        try {
+            if (accNo == Integer.parseInt(subLine[0])) {
+                return null;
+            }
+        } catch (NumberFormatException e) {
+            System.err.println("Skipping corrupted line in DB: " + line);
+            return null;
+        }
+        String newLine = String.join(" ", subLine).trim();
+        return newLine;
+    }
+
+    private void writeContent(String fileName, String content) throws IOException {
+        try (FileWriter writer = new FileWriter(fileName)) {
+            writer.write(content);
+        }
+    }
 }
