@@ -69,13 +69,7 @@ public class Transaction implements TransactionDataRepository.PathResolver{
                 transaction(accNo, rAccNo, tAmount);  //actual transaction
                 writeTransaction(details); //write transaction to file
                 System.out.println("Transaction Successful!");
-                System.out.println("Press any key to continue...");
-
-                try (Scanner tscanner = new Scanner(System.in)) {
-                    if (tscanner.hasNextLine()) {
-                        tscanner.nextLine();
-                    }
-                }
+                System.out.println();
                 menuCall(accNo);
             } else {
                 System.out.println("Insufficient Balance!");

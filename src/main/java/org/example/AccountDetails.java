@@ -37,9 +37,7 @@ public class AccountDetails implements UserRepository.PathResolver{
     }
 
     private void handleContinuationFlow(Account account) throws IOException {
-        System.out.println("\n" + "Press Enter key to continue...");
-        Scanner scanner1 = new Scanner(System.in);
-        scanner1.nextLine();
+        System.out.println();
         menuCall(account.getAccountNumber());
     }
 

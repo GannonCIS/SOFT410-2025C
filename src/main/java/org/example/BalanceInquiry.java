@@ -29,9 +29,7 @@ public class BalanceInquiry {
             System.out.println("┌───────────────────────────────┐");
             System.out.println("  Your current balance is $"+ accBalance +"   ");
             System.out.println("└───────────────────────────────┘");
-            System.out.println("Press Enter key to continue...");
-            Scanner scanner1 = new Scanner(System.in);
-            scanner1.nextLine();
+            System.out.println();
             menuCall(accNo);
         }
     }

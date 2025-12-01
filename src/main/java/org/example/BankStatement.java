@@ -7,7 +7,6 @@ import java.util.Scanner;
 
 public class BankStatement {
 
-    // --- NEW METHOD 1: Interceptor for file paths ---
     String getFilePath(String fileName) {
         return fileName;
     }
@@ -44,14 +43,10 @@ public class BankStatement {
     }
 
     void exit(int accNo) throws IOException {
-        System.out.println("\n" + "Press Enter key to continue...");
-        Scanner scanner1 = new Scanner(System.in);
-        scanner1.nextLine();
-        // --- FIX: Call the interceptor method ---
+        System.out.println();
         menuCall(accNo);
     }
 
-    // --- NEW METHOD 2: Interceptor for Main.menu() ---
     void menuCall(int accNo) throws IOException {
         Main.menu(accNo);
     }
