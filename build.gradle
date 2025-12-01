@@ -9,6 +9,15 @@ version = '1.0-SNAPSHOT'
 repositories {
     mavenCentral()
 }
+// 1. Ensure the compiler reads your code as UTF-8
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// 2. Ensure the running application outputs UTF-8
+tasks.withType(JavaExec).configureEach {
+    jvmArgs = ['-Dfile.encoding=UTF-8']
+}
 
 java {
     toolchain {

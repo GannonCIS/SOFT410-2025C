@@ -43,9 +43,9 @@ public class BankingFacade {
                     break;
                 }
             }
-            scanner.nextLine();
-            System.out.println("Incorrect! Choose a valid option again.");
-            System.out.println("Type 1: Login | Type 2: Create Account");
+                scanner.nextLine();
+                System.out.println("Incorrect! Choose a valid option again.");
+                System.out.println("Type 1: Login | Type 2: Create Account");
         }
     }
 
