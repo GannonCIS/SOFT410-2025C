@@ -7,7 +7,6 @@ import java.util.Scanner;
 public class Login {
 
     File file = new File("db/credentials.txt");
-    // --- FIX: Change visibility from private to protected ---
     protected int accNo;
     protected String pass;
     Scanner scanner = new Scanner(System.in);
@@ -21,13 +20,11 @@ public class Login {
     }
 
     void loginAuth() throws IOException {
-        // --- FIX 1: Each find method needs its own scanner ---
         boolean loginBoo = findLogin(new Scanner(file));
         boolean incPass = findPassword(new Scanner(file));
 
         if (loginBoo) {
             System.out.println("Login Successful!!\n");
-            // --- FIX 2: Call the interceptor method ---
             menuCall(accNo);
         } else if (incPass) {
             System.out.println("\nIncorrect Password!");
@@ -40,7 +37,6 @@ public class Login {
         }
     }
 
-    // --- NEW METHOD: Interceptor for Main.menu() ---
     void menuCall(int accNo) throws IOException {
         Main.menu(accNo);
     }
